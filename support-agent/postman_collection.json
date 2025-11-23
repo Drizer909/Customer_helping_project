@@ -1,0 +1,92 @@
+{
+    "info": {
+        "_postman_id": "support-agent-collection",
+        "name": "Support Agent API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/health",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "health"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Support Query",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"test@example.com\",\n    \"query\": \"What is your refund policy?\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/support",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "support"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Metrics",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/dashboard/metrics?start_date=2024-01-01&end_date=2024-12-31",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "dashboard",
+                        "metrics"
+                    ],
+                    "query": [
+                        {
+                            "key": "start_date",
+                            "value": "2024-01-01"
+                        },
+                        {
+                            "key": "end_date",
+                            "value": "2024-12-31"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        }
+    ]
+}
