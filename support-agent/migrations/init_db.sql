@@ -16,13 +16,12 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Support tickets log
 CREATE TABLE IF NOT EXISTS tickets (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     query TEXT NOT NULL,
     retrieved_context TEXT, -- Context from vector DB
-    gemini_response TEXT NOT NULL,
+    model_response TEXT NOT NULL,
     resolution_time_ms INT,
     status VARCHAR(20) DEFAULT 'resolved',
     confidence_score FLOAT,

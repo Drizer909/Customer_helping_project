@@ -1,28 +1,83 @@
+import logging
+from abc import ABC, abstractmethod
+from typing import List, Tuple
+
+import anthropic
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from fastembed import TextEmbedding
 import google.generativeai as genai
+
 from app.config import settings
-from typing import List, Tuple
-import time
+
+logger = logging.getLogger(__name__)
+
+
+class LLMClient(ABC):
+    @abstractmethod
+    def generate_text(self, prompt: str) -> str:
+        ...
+
+
+class GeminiLLMClient(LLMClient):
+    def __init__(self, api_key: str, model_name: str):
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(model_name)
+
+    def generate_text(self, prompt: str) -> str:
+        response = self.model.generate_content(prompt)
+        return response.text.strip()
+
+
+class ClaudeLLMClient(LLMClient):
+    def __init__(self, api_key: str, model_name: str):
+        self.client = anthropic.Client(api_key=api_key)
+        self.model_name = model_name
+
+    def generate_text(self, prompt: str) -> str:
+        completion = self.client.completions.create(
+            model=self.model_name,
+            prompt=f"{anthropic.HUMAN_PROMPT}{prompt}{anthropic.AI_PROMPT}",
+            max_tokens_to_sample=1024,
+            temperature=0.25,
+        )
+        return completion.completion.strip()
+
+
+class FallbackLLMClient(LLMClient):
+    def generate_text(self, prompt: str) -> str:
+        logger.warning("No LLM provider configured - returning placeholder response")
+        return "I'm unable to answer right now because no LLM key is configured."
+
 
 class RAGEngine:
     def __init__(self):
-        # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
         self.collection = self.chroma_client.get_or_create_collection(name="knowledge_base")
-        
-        # Initialize FastEmbed
+
         try:
             self.embedding_model = TextEmbedding(model_name=settings.embedding_model)
             self.use_fastembed = True
         except Exception as e:
-            print(f"Warning: FastEmbed failed to initialize: {e}")
+            logger.warning("FastEmbed unavailable, falling back to dummy embeddings: %s", e)
             self.use_fastembed = False
-        
-        # Initialize Gemini
-        genai.configure(api_key=settings.gemini_api_key)
-        self.model = genai.GenerativeModel(settings.gemini_model)
+
+        self.llm_client = self._init_llm_client()
+
+    def _init_llm_client(self) -> LLMClient:
+        provider = settings.ai_provider.lower()
+        if provider == "anthropic" and settings.anthropic_api_key:
+            return ClaudeLLMClient(settings.anthropic_api_key, settings.anthropic_model)
+        if provider == "gemini" and settings.gemini_api_key:
+            return GeminiLLMClient(settings.gemini_api_key, settings.gemini_model)
+
+        if settings.gemini_api_key:
+            logger.warning("AI_PROVIDER=%s but Gemini key found; falling back to Gemini", provider)
+            return GeminiLLMClient(settings.gemini_api_key, settings.gemini_model)
+        if settings.anthropic_api_key:
+            logger.warning("AI_PROVIDER=%s but Anthropic key found; falling back to Claude", provider)
+            return ClaudeLLMClient(settings.anthropic_api_key, settings.anthropic_model)
+
+        return FallbackLLMClient()
 
     def generate_embedding(self, text: str) -> List[float]:
         if self.use_fastembed:
@@ -79,10 +134,8 @@ Instructions:
         prompt = self.build_prompt(query, context_docs)
         
         try:
-            response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
-            
-            # Parse response and confidence score
+            response_text = self.llm_client.generate_text(prompt)
+
             if "|" in response_text:
                 parts = response_text.rsplit("|", 1)
                 answer = parts[0].strip()
@@ -92,13 +145,13 @@ Instructions:
                     confidence = 0.5
             else:
                 answer = response_text
-                confidence = 0.5 # Default if format is missed
-                
+                confidence = 0.5
+
             sources = [doc['title'] for doc in context_docs]
             return answer, sources, confidence
-            
         except Exception as e:
-            print(f"Error generating response: {e}")
-            return "I'm sorry, I'm having trouble processing your request right now. Please try again later.", [], 0.0
+            logger.error("Error generating response: %s", e)
+            return ("I'm sorry, I'm having trouble processing your request right now. Please try again later.",
+                    [], 0.0)
 
 rag_engine = RAGEngine()

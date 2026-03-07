@@ -45,6 +45,21 @@ curl http://localhost:8000/health
 
 ---
 
+## 🧠 **Enable Claude Haiku 4.5 for All Clients**
+
+1. Update `/Users/drizer/Desktop/customer/support-agent/.env` with the new defaults:
+   ```dotenv
+   AI_PROVIDER=anthropic
+   ANTHROPIC_API_KEY=your_claude_api_key_here
+   ANTHROPIC_MODEL=claude-haiku-4.5
+   GEMINI_API_KEY=your_gemini_api_key_here  # optional fallback
+   ```
+2. Restart the backend after editing `.env` so the new provider settings are reloaded:
+   ```bash
+   docker compose restart backend
+   ```
+3. If you ever need to force Gemini, set `AI_PROVIDER=gemini` and supply `GEMINI_API_KEY`; the code automatically chooses the best available key.
+
 ## 📚 **First-Time Setup (Only Once)**
 
 If this is the first time showing the project or if you've reset the database:

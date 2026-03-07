@@ -1,10 +1,10 @@
 # Intelligent Customer Support Agent
 
-A production-ready Intelligent Customer Support Agent that automates customer service queries using Retrieval-Augmented Generation (RAG) with Gemini 1.5 Pro.
+A production-ready Intelligent Customer Support Agent that automates customer service queries using Retrieval-Augmented Generation (RAG) powered by Claude Haiku 4.5 (with an optional Gemini fallback).
 
 ## Architecture
 - **Backend**: FastAPI, Python 3.11
-- **AI/ML**: Gemini 1.5 Pro, ChromaDB (Vector Store), FastEmbed
+- **AI/ML**: Claude Haiku 4.5 by default (Gemini 1.5 Pro fallback available), ChromaDB (Vector Store), FastEmbed
 - **Database**: PostgreSQL 16.2
 - **Frontend**: React 18, TypeScript, Tailwind CSS
 - **Deployment**: Docker Compose
@@ -13,20 +13,22 @@ A production-ready Intelligent Customer Support Agent that automates customer se
 
 ### Prerequisites
 - Docker & Docker Compose
-- Google Gemini API Key
+- Anthropic Claude API Key (required for the default experience)
+- Google Gemini API Key (optional, only needed if you want to keep using Gemini)
 
 ### Quick Start
 1. Clone the repository.
 2. Create `.env` file (already created if you followed the setup).
    ```bash
    cp .env.example .env
-   # Edit .env and add your GEMINI_API_KEY
+   # Edit .env and add your ANTHROPIC_API_KEY (set AI_PROVIDER=anthropic)
    ```
-3. Start the services:
+3. (Optional) If you need to rely on Gemini instead of Claude, set `AI_PROVIDER=gemini` and provide `GEMINI_API_KEY` in `.env`.
+4. Start the services:
    ```bash
    docker-compose up --build
    ```
-4. Access the application:
+5. Access the application:
    - **Dashboard**: http://localhost:3000
    - **Backend API**: http://localhost:8000/docs
 

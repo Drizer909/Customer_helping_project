@@ -21,7 +21,7 @@ class Ticket(BaseModel):
     user_id: int
     query: str
     retrieved_context: Optional[str]
-    gemini_response: str
+    model_response: str
     resolution_time_ms: Optional[int]
     status: str
     confidence_score: Optional[float]

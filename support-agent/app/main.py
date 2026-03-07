@@ -55,7 +55,7 @@ async def support_endpoint(request: SupportRequest):
 
         # 3. Log Ticket
         ticket_id = await conn.fetchval("""
-            INSERT INTO tickets (user_id, query, retrieved_context, gemini_response, resolution_time_ms, status, confidence_score)
+            INSERT INTO tickets (user_id, query, retrieved_context, model_response, resolution_time_ms, status, confidence_score)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
         """, user_id, request.query, str(result['sources']), result['response'], resolution_time_ms, status, result['confidence_score'])
