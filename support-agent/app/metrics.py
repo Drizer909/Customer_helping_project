@@ -5,13 +5,13 @@ from typing import Dict, Any, List
 async def get_daily_metrics(date_val: date) -> Dict[str, Any]:
     pool = await db.get_pool()
     async with pool.acquire() as conn:
-        # Check cache first
-        cached = await conn.fetchrow("SELECT * FROM metrics_cache WHERE date = $1", date_val)
-        if cached:
-            return dict(cached)
+        # For past dates, check cache first. For today, always recalculate live.
+        if date_val != date.today():
+            cached = await conn.fetchrow("SELECT * FROM metrics_cache WHERE date = $1", date_val)
+            if cached:
+                return dict(cached)
 
         # Calculate metrics for the given date
-        # Note: This query assumes 'created_at' is timestamp
         start_of_day = datetime.combine(date_val, datetime.min.time())
         end_of_day = datetime.combine(date_val, datetime.max.time())
 
@@ -50,8 +50,17 @@ async def get_trend_data(days: int = 30) -> List[Dict[str, Any]]:
     pool = await db.get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT * FROM metrics_cache 
-            WHERE date >= CURRENT_DATE - $1::int 
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as total_tickets
+            FROM tickets
+            WHERE created_at >= CURRENT_DATE - $1::int
+            GROUP BY DATE(created_at)
             ORDER BY date ASC
         """, days)
-        return [dict(row) for row in rows]
+        trend = [dict(row) for row in rows]
+        if not trend:
+            # Fallback to cache if no direct tickets in window
+            cached = await conn.fetch("SELECT date, total_tickets FROM metrics_cache WHERE date >= CURRENT_DATE - $1::int ORDER BY date ASC", days)
+            trend = [dict(row) for row in cached]
+        return trend

@@ -21,11 +21,18 @@ class LLMClient(ABC):
 class GeminiLLMClient(LLMClient):
     def __init__(self, api_key: str, model_name: str):
         genai.configure(api_key=api_key)
+        self.model_name = model_name
         self.model = genai.GenerativeModel(model_name)
 
     def generate_text(self, prompt: str) -> str:
-        response = self.model.generate_content(prompt)
-        return response.text.strip()
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            logger.warning(f"Primary model {self.model_name} failed ({e}). Trying fallback model gemini-flash-latest...")
+            fallback_model = genai.GenerativeModel("gemini-flash-latest")
+            response = fallback_model.generate_content(prompt)
+            return response.text.strip()
 
 
 class ClaudeLLMClient(LLMClient):
@@ -53,15 +60,18 @@ class RAGEngine:
     def __init__(self):
         self.chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
         self.collection = self.chroma_client.get_or_create_collection(name="knowledge_base")
-
-        try:
-            self.embedding_model = TextEmbedding(model_name=settings.embedding_model)
-            self.use_fastembed = True
-        except Exception as e:
-            logger.warning("FastEmbed unavailable, falling back to dummy embeddings: %s", e)
-            self.use_fastembed = False
-
+        self._embedding_model = None
+        self.use_fastembed = True
         self.llm_client = self._init_llm_client()
+
+    def _get_embedding_model(self):
+        if self._embedding_model is None and self.use_fastembed:
+            try:
+                self._embedding_model = TextEmbedding(model_name=settings.embedding_model)
+            except Exception as e:
+                logger.warning("FastEmbed unavailable, falling back to dummy embeddings: %s", e)
+                self.use_fastembed = False
+        return self._embedding_model
 
     def _init_llm_client(self) -> LLMClient:
         provider = settings.ai_provider.lower()
@@ -80,9 +90,10 @@ class RAGEngine:
         return FallbackLLMClient()
 
     def generate_embedding(self, text: str) -> List[float]:
-        if self.use_fastembed:
+        model = self._get_embedding_model()
+        if model and self.use_fastembed:
             # FastEmbed returns a generator, we take the first item
-            embeddings = list(self.embedding_model.embed([text]))
+            embeddings = list(model.embed([text]))
             return embeddings[0].tolist()
         else:
             # Fallback dummy embedding (384 dimensions for all-MiniLM-L6-v2)
@@ -151,6 +162,7 @@ Instructions:
             return answer, sources, confidence
         except Exception as e:
             logger.error("Error generating response: %s", e)
+            print(f"ERROR IN GENERATE RESPONSE: {e}", flush=True)
             return ("I'm sorry, I'm having trouble processing your request right now. Please try again later.",
                     [], 0.0)
 

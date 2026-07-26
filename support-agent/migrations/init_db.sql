@@ -46,5 +46,5 @@ CREATE TABLE IF NOT EXISTS metrics_cache (
     automated_resolution_rate FLOAT
 );
 
--- Add pgvector extension for hybrid search capability
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Add pgvector extension for hybrid search capability (Optional - ChromaDB handles vector search)
+-- CREATE EXTENSION IF NOT EXISTS vector;

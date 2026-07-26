@@ -13,11 +13,7 @@ class SupportResult(TypedDict):
 class SupportAgentDeps(BaseModel):
     pass
 
-support_agent = Agent(
-    f'google-gla:{settings.gemini_model}',
-    deps_type=SupportAgentDeps,
-    system_prompt="You are a helpful support agent helper. Your job is to format the RAG response correctly."
-)
+support_agent = None
 
 # Note: In this specific architecture, the RAG logic is heavily embedded in rag_engine.py 
 # and the prompt engineering there handles the generation. 
