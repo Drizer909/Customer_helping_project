@@ -24,7 +24,7 @@ for guide in sorted((root / "support-agent/knowledge_docs").glob("*.md")):
     articles.append("<article><h2>" + html.escape(title.removeprefix("# ")) +
                     "</h2>" + "".join(sections) + "</article>")
 
-out = root / "public-help/dist"
+out = root / "docs"
 out.mkdir(exist_ok=True)
 template = (root / "public-help/template.html").read_text()
 (out / "index.html").write_text(template.replace("<!-- guides -->", "\n".join(articles)))

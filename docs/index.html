@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SupportAI Help Center</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f6f4;color:#173a30;font:1rem/1.6 "Inter",system-ui,sans-serif}header{background:#133e35;color:white;padding:3rem max(5vw,calc((100vw - 68rem)/2))}h1{font-size:clamp(2.5rem,6vw,5rem);line-height:1.08;margin:.5rem 0 2rem}label{display:block;font-weight:600}input{width:min(100%,36rem);padding:.9rem 1rem;font:inherit;border:1px solid #819b90;border-radius:.4rem}main{max-width:72rem;margin:auto;padding:2rem;display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))}article{background:white;border:1px solid #d3dfd8;border-radius:.7rem;padding:1.5rem 2rem}h2{margin-top:0;font-size:1.65rem}h3{margin-bottom:.25rem}ul,ol{padding-left:1.35rem;margin-top:.25rem}[hidden]{display:none}
+</style>
+<header><div>SupportAI</div><h1>Help center</h1><label for="search">Search the guides</label><input id="search" type="search" placeholder="Try refunds, shipping or password"></header>
+<main><article><h2>Account Management</h2><h3>Password Reset</h3><ol><li>Go to the login page and click &quot;Forgot Password&quot;.</li><li>Enter your email address.</li><li>Follow the instructions sent to your email to reset your password.</li></ol><h3>Updating Profile</h3><ul><li>Log in to your account.</li><li>Navigate to &quot;My Profile&quot;.</li><li>You can update your name, email, and shipping address here.</li></ul><h3>Deleting Account</h3><ul><li>If you wish to delete your account, please contact support.</li><li>Note: This action is irreversible.</li></ul></article>
+<article><h2>Refund Policy</h2><p>At SupportAI, we want you to be completely satisfied with your purchase.</p><h3>Standard Refund Policy</h3><ul><li>You may request a full refund within <strong>30 days</strong> of your purchase date.</li><li>To initiate a refund, please contact our support team with your order number.</li><li>Refunds are processed within 5-7 business days back to the original payment method.</li></ul><h3>Exceptions</h3><ul><li>Digital products that have been downloaded are non-refundable.</li><li>Customized items are non-refundable unless defective.</li></ul></article>
+<article><h2>Shipping Information</h2><h3>Domestic Shipping</h3><ul><li>Standard Shipping: 5-7 business days. Free for orders over $50.</li><li>Express Shipping: 2-3 business days. Flat rate of $15.</li><li>Overnight Shipping: 1 business day. Calculated at checkout.</li></ul><h3>International Shipping</h3><ul><li>We ship to over 100 countries.</li><li>Delivery times vary by location, typically 10-20 business days.</li><li>Customs duties and taxes are the responsibility of the recipient.</li></ul><h3>Tracking</h3><ul><li>You will receive a tracking number via email once your order ships.</li></ul></article>
+<article><h2>Troubleshooting</h2><h3>Login Issues</h3><ul><li>Ensure you are using the correct email and password.</li><li>Check your internet connection.</li><li>Clear your browser cache and cookies.</li><li>If the issue persists, try resetting your password.</li></ul><h3>Payment Failures</h3><ul><li>Check that your card details are correct.</li><li>Ensure your card has sufficient funds.</li><li>Contact your bank if the transaction is being declined.</li></ul><h3>Website Errors</h3><ul><li>If you encounter a 404 or 500 error, please refresh the page.</li><li>If the error continues, please report it to support with a screenshot.</li></ul></article><p id="empty" role="status" hidden>No guides match your search.</p></main>
+<script>
+const guides = Array.from(document.querySelectorAll('article'));
+document.querySelector('#search').addEventListener('input', event => {
+  const words = event.target.value.trim().toLowerCase().split(/\s+/);
+  for (const guide of guides) {
+    guide.hidden = !words.every(word => guide.textContent.toLowerCase().includes(word));
+  }
+  document.querySelector('#empty').hidden = guides.some(guide => !guide.hidden);
+});
+</script></html>

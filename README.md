@@ -58,3 +58,7 @@ The dashboard provides real-time insights into support ticket volume, resolution
 
 ## License
 MIT
+
+## Public help center
+
+Run `python3 public-help/build.py` after editing customer guides and commit the generated `docs/index.html`. GitHub Pages publishes the `docs` directory on `main`.
