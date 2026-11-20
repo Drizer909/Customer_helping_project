@@ -3,8 +3,8 @@ import { supportApi } from '../api/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Dashboard: React.FC = () => {
-    const [metrics, setMetrics] = useState<any>(null);
-    const [trendData, setTrendData] = useState<any[]>([]);
+    const [metrics, setMetrics] = useState<{ total_tickets: number; avg_resolution_time_ms: number; escalation_rate: number; automated_resolution_rate: number } | null>(null);
+    const [trendData, setTrendData] = useState<{ date: string; total_tickets: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

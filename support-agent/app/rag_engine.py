@@ -1,4 +1,5 @@
 import logging
+import math
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -53,7 +54,7 @@ class ClaudeLLMClient(LLMClient):
 class FallbackLLMClient(LLMClient):
     def generate_text(self, prompt: str) -> str:
         logger.warning("No LLM provider configured - returning placeholder response")
-        return "I'm unable to answer right now because no LLM key is configured."
+        return "I'm unable to answer right now. Your question needs human review.|0"
 
 
 class RAGEngine:
@@ -153,10 +154,13 @@ Instructions:
                 try:
                     confidence = float(parts[1].strip())
                 except ValueError:
-                    confidence = 0.5
+                    confidence = 0.0
             else:
                 answer = response_text
-                confidence = 0.5
+                confidence = 0.0
+
+            if not math.isfinite(confidence) or not 0 <= confidence <= 1 or not context_docs:
+                confidence = 0.0
 
             sources = [doc['title'] for doc in context_docs]
             return answer, sources, confidence

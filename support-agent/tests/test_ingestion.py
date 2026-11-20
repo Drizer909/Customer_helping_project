@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from app.ingest_pipeline import IngestPipeline
 
 @pytest.mark.asyncio
@@ -9,6 +9,7 @@ async def test_ingest_file():
         
         mock_rag.generate_embedding.return_value = [0.1, 0.2, 0.3]
         
+        mock_db_pool.return_value = MagicMock()
         mock_conn = AsyncMock()
         mock_db_pool.return_value.acquire.return_value.__aenter__.return_value = mock_conn
         

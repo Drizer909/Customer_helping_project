@@ -38,19 +38,19 @@ A production-ready Intelligent Customer Support Agent that automates customer se
 The API documentation is available at `http://localhost:8000/docs` (Swagger UI).
 Key endpoints:
 - `POST /api/v1/support`: Submit a support query.
-- `POST /api/v1/knowledge/ingest`: Upload knowledge base documents.
+- `POST /api/v1/knowledge/ingest`: Upload a nonempty UTF-8 Markdown or text document up to 1 MiB.
 - `GET /api/v1/dashboard/metrics`: Get dashboard metrics.
 
 ### Dashboard
 The dashboard provides real-time insights into support ticket volume, resolution rates, and agent performance.
 - **Overview**: KPI cards and trend charts.
-- **Tickets**: View and manage support tickets.
+- **Tickets**: Search by email, question, or ticket ID and filter by status. Browse 25 tickets per page and export the displayed results as CSV.
 - **Knowledge Base**: Manage ingested documents.
 - **Test Agent**: Playground to test the RAG agent.
 
 ## Testing
 - **Backend**: Run `pytest` in the `support-agent` directory.
-- **Dashboard**: Run `npm test` in the `dashboard` directory.
+- **Dashboard**: Run `npm ci`, `npm run lint`, and `npm run build` in the `dashboard` directory.
 
 ## Cost Estimation
 - **Gemini 1.5 Pro**: Free tier available. Paid tier pricing depends on token usage.

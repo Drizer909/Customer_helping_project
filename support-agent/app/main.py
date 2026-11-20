@@ -7,8 +7,9 @@ from app.ingest_pipeline import ingest_pipeline
 from app.metrics import get_daily_metrics, get_trend_data
 from datetime import date, datetime
 import time
-import shutil
-import os
+from pathlib import Path
+from typing import Literal
+
 
 app = FastAPI(title="Support Agent API", version="1.0.0")
 
@@ -38,20 +39,17 @@ async def health_check():
 async def support_endpoint(request: SupportRequest):
     start_time = time.time()
     
-    # 1. Get User ID (create if not exists)
+    result = await run_support_agent(request.query)
+    resolution_time_ms = int((time.time() - start_time) * 1000)
+    status = "escalated" if result["needs_escalation"] else "resolved"
+
     pool = await db.get_pool()
-    async with pool.acquire() as conn:
+    async with pool.acquire() as conn, conn.transaction():
         user_id = await conn.fetchval("""
             INSERT INTO users (email, name) VALUES ($1, $2)
-            ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+            ON CONFLICT (email) DO UPDATE SET name = COALESCE(EXCLUDED.name, users.name)
             RETURNING id
         """, request.email, request.name)
-
-        # 2. Run Agent
-        result = await run_support_agent(request.query)
-        
-        resolution_time_ms = int((time.time() - start_time) * 1000)
-        status = "escalated" if result['needs_escalation'] else "resolved"
 
         # 3. Log Ticket
         ticket_id = await conn.fetchval("""
@@ -76,15 +74,24 @@ async def support_endpoint(request: SupportRequest):
 
 @app.post("/api/v1/knowledge/ingest")
 async def ingest_document(file: UploadFile = File(...)):
-    file_location = f"knowledge_docs/{file.filename}"
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(file.file, file_object)
-    
-    with open(file_location, "r") as f:
-        content = f.read()
-        
-    await ingest_pipeline.ingest_file(file_location, content, file.filename)
-    return {"status": "ingested", "filename": file.filename}
+    name = file.filename or ""
+    if (Path(name).name != name or chr(92) in name or len(name.encode()) > 255
+            or any(ord(char) < 32 for char in name)
+            or Path(name).suffix.lower() not in {".md", ".txt"}):
+        raise HTTPException(422, "Choose a Markdown or plain text file with a valid filename.")
+    size_limit = 1024 * 1024
+    data = await file.read(size_limit + 1)
+    if len(data) > size_limit:
+        raise HTTPException(413, "Documents must be 1 MiB or smaller.")
+    try:
+        content = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise HTTPException(422, "Documents must use UTF-8 encoding.")
+    if not content.strip() or chr(0) in content:
+        raise HTTPException(422, "Choose a nonempty text document.")
+    # The database stores the original text. Keep uploaded files off the server filesystem.
+    await ingest_pipeline.ingest_file(name, content, name)
+    return {"status": "ingested", "filename": name}
 
 @app.get("/api/v1/tickets/{user_email}")
 async def get_user_tickets(user_email: str):
@@ -114,16 +121,25 @@ async def get_dashboard_metrics(start_date: date = Query(...), end_date: date = 
     return {"metrics": latest_metrics, "trend_data": trend_data}
 
 @app.get("/api/v1/dashboard/recent-tickets")
-async def get_recent_tickets(limit: int = 50):
+async def get_recent_tickets(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    search: str = Query("", max_length=200),
+    status: Literal["resolved", "escalated"] | None = None,
+):
     pool = await db.get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT t.id, u.email, t.query, t.status, t.confidence_score, t.created_at, t.resolution_time_ms
             FROM tickets t
             JOIN users u ON t.user_id = u.id
-            ORDER BY t.created_at DESC
-            LIMIT $1
-        """, limit)
+            WHERE ($3::text IS NULL OR t.status = $3)
+              AND (strpos(lower(u.email), lower($4)) > 0
+                   OR strpos(lower(t.query), lower($4)) > 0
+                   OR t.id::text = $4)
+            ORDER BY t.created_at DESC, t.id DESC
+            LIMIT $1 OFFSET $2
+        """, limit, offset, status, search.strip())
         return [dict(row) for row in rows]
 
 @app.get("/api/v1/dashboard/kb-stats")

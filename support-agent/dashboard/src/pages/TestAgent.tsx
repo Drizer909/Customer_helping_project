@@ -3,7 +3,7 @@ import { supportApi } from '../api/client';
 
 const TestAgent: React.FC = () => {
     const [query, setQuery] = useState('');
-    const [response, setResponse] = useState<any>(null);
+    const [response, setResponse] = useState<{ response: string; confidence_score: number; status: string; sources: string[] } | null>(null);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -5,12 +5,23 @@ const client = axios.create({
     headers: { 'Content-Type': 'application/json' }
 });
 
+export interface RecentTicket {
+    id: number;
+    email: string;
+    query: string;
+    status: string;
+    confidence_score: number | null;
+    created_at: string;
+}
+
 export const supportApi = {
     async getMetrics(startDate: string, endDate: string) {
         return client.get(`/dashboard/metrics?start_date=${startDate}&end_date=${endDate}`);
     },
-    async getRecentTickets(limit: number = 50) {
-        return client.get(`/dashboard/recent-tickets?limit=${limit}`);
+    async getRecentTickets(limit = 50, offset = 0, search = "", status = "", signal?: AbortSignal) {
+        return client.get<RecentTicket[]>("/dashboard/recent-tickets", {
+            params: { limit, offset, search, status: status || undefined }, signal
+        });
     },
     async ingestDocument(file: File) {
         const formData = new FormData();

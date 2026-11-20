@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supportApi } from '../api/client';
 
 const KnowledgeBase: React.FC = () => {
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<{ total_docs: number; last_updated: string | null; doc_titles: string[] } | null>(null);
     const [uploading, setUploading] = useState(false);
 
     const fetchStats = async () => {
@@ -41,7 +41,8 @@ const KnowledgeBase: React.FC = () => {
                 <div className="relative">
                     <input
                         type="file"
-                        accept=".md"
+                        accept=".md,.txt"
+                        disabled={uploading}
                         onChange={handleFileUpload}
                         className="hidden"
                         id="file-upload"

@@ -2,7 +2,7 @@ FROM node:20-slim as builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN rm -rf node_modules package-lock.json && npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
